@@ -1,5 +1,5 @@
 // SoldierAgent.cs - Version SIMPLE et PROPRE
-using UnityEngine;
+/*using UnityEngine;
 using System.Collections.Generic;
 
 public enum SoldierState
@@ -80,7 +80,7 @@ public class SoldierAgent : SteeringBehavior
         /*} else {
             arr = Arrive(currentTarget.position) * arriveWeight;
             ApplyForce(arr);
-        }*/
+        }
 
         float distance = Vector3.Distance(transform.position, currentTarget.position);
 
@@ -196,4 +196,4 @@ public class SoldierAgent : SteeringBehavior
             Gizmos.DrawLine(transform.position, currentTarget.position);
         }
     }
-}
+}*/

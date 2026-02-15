@@ -1,53 +1,46 @@
-// SteeringBehavior.cs - Version SANS damping
 using UnityEngine;
 using System.Collections.Generic;
 
-public class SteeringBehavior : MonoBehaviour
+/// <summary>
+/// Composant qui fournit des calculs de steering behaviors PURS
+/// NE gère PAS le mouvement lui-même - retourne juste des forces
+/// </summary>
+public class SteeringBehaviors : MonoBehaviour
 {
-    [Header("Movement Parameters")]
-    public float maxSpeed = 5f;
-    public float maxForce = 10f;
-    public float mass = 1f;
-    
     [Header("Arrival Parameters")]
     public float slowingRadius = 3f;
     public float arrivalRadius = 0.5f;
-    public float stopRadius = 1f;
+    public float stopRadius = 0.3f;
     
-    [Header("Separation Parameters")]
+    [Header("Flocking Parameters")]
     public float separationRadius = 1.5f;
     public float cohesionRadius = 5f;
     public float alignmentRadius = 5f;
+    
+    [Header("Force Limits")]
+    public float maxSpeed = 5f;
+    public float maxForce = 10f;
+    
+    [Header("Detection")]
     public LayerMask soldierLayer;
     
-    public Vector3 velocity = Vector3.zero;
-    protected Vector3 acceleration = Vector3.zero;
+    private MovementController movement;
+    private SoldierAgent soldier;
     
-    protected virtual void Update()
+    void Awake()
     {
-        velocity += acceleration * Time.deltaTime;
-        velocity = Vector3.ClampMagnitude(velocity, maxSpeed);
-        
-        transform.position += velocity * Time.deltaTime;
-
-        if (velocity.magnitude > 0.1f)
-        {
-            transform.forward = velocity.normalized;
-        }
-        
-        acceleration = Vector3.zero;
+        movement = GetComponent<MovementController>();
+        soldier = GetComponent<SoldierAgent>();
     }
     
-    public void ApplyForce(Vector3 force)
-    {
-        acceleration += force / mass;
-    }
-
+    /// <summary>
+    /// Calcule la force d'arrivée vers une position
+    /// </summary>
     public Vector3 Arrive(Vector3 targetPosition)
     {
         Vector3 desired = targetPosition - transform.position;
         float distance = desired.magnitude;
-        desired.y = 0;
+        desired.y = 0; // Garder sur le plan horizontal
         
         if (distance < 0.01f)
         {
@@ -56,6 +49,7 @@ public class SteeringBehavior : MonoBehaviour
         
         float speed = maxSpeed;
         
+        // Ralentir dans le rayon de ralentissement
         if (distance < slowingRadius)
         {
             speed = maxSpeed * (distance / slowingRadius);
@@ -63,11 +57,13 @@ public class SteeringBehavior : MonoBehaviour
         
         desired = desired.normalized * speed;
         
-        Vector3 steer = desired - velocity;
+        Vector3 steer = desired - movement.Velocity;
         return Vector3.ClampMagnitude(steer, maxForce);
     }
     
-    // SEPARATION
+    /// <summary>
+    /// Calcule la force de séparation par rapport aux voisins
+    /// </summary>
     public Vector3 Separation(List<Transform> neighbors)
     {
         Vector3 steer = Vector3.zero;
@@ -81,7 +77,7 @@ public class SteeringBehavior : MonoBehaviour
             {
                 Vector3 diff = transform.position - other.position;
                 diff.y = 0;
-                diff = diff.normalized / distance;
+                diff = diff.normalized / distance; // Plus fort quand plus proche
                 steer += diff;
                 count++;
             }
@@ -91,14 +87,16 @@ public class SteeringBehavior : MonoBehaviour
         {
             steer /= count;
             steer = steer.normalized * maxSpeed;
-            steer -= velocity;
+            steer -= movement.Velocity;
             return Vector3.ClampMagnitude(steer, maxForce);
         }
         
         return Vector3.zero;
     }
     
-    // COHESION
+    /// <summary>
+    /// Calcule la force de cohésion (aller vers le centre du groupe)
+    /// </summary>
     public Vector3 Cohesion(List<Transform> neighbors)
     {
         if (neighbors.Count == 0) return Vector3.zero;
@@ -114,11 +112,13 @@ public class SteeringBehavior : MonoBehaviour
         desired.y = 0;
         desired = desired.normalized * maxSpeed;
         
-        Vector3 steer = desired - velocity;
+        Vector3 steer = desired - movement.Velocity;
         return Vector3.ClampMagnitude(steer, maxForce);
     }
     
-    // ALIGNMENT
+    /// <summary>
+    /// Calcule la force d'alignement (même direction que les voisins)
+    /// </summary>
     public Vector3 Alignment(List<Transform> neighbors)
     {
         if (neighbors.Count == 0) return Vector3.zero;
@@ -126,35 +126,35 @@ public class SteeringBehavior : MonoBehaviour
         Vector3 avgVel = Vector3.zero;
         foreach (Transform other in neighbors)
         {
-            SteeringBehavior otherSteering = other.GetComponent<SteeringBehavior>();
-            if (otherSteering != null)
+            MovementController otherMovement = other.GetComponent<MovementController>();
+            if (otherMovement != null)
             {
-                avgVel += otherSteering.velocity;
+                avgVel += otherMovement.Velocity;
             }
         }
         avgVel /= neighbors.Count;
         
         avgVel = avgVel.normalized * maxSpeed;
-        Vector3 steer = avgVel - velocity;
+        Vector3 steer = avgVel - movement.Velocity;
         return Vector3.ClampMagnitude(steer, maxForce);
     }
     
-    // FIND NEIGHBORS
+    /// <summary>
+    /// Trouve les voisins dans un rayon donné
+    /// </summary>
     public List<Transform> FindNeighbors(float radius, bool sameSquadOnly = false)
     {
         List<Transform> neighbors = new List<Transform>();
         Collider[] nearbyColliders = Physics.OverlapSphere(transform.position, radius, soldierLayer);
         
-        SoldierAgent thisAgent = GetComponent<SoldierAgent>();
-        
         foreach (Collider col in nearbyColliders)
         {
             if (col.transform == transform) continue;
             
-            if (sameSquadOnly && thisAgent != null)
+            if (sameSquadOnly && soldier != null)
             {
                 SoldierAgent otherAgent = col.GetComponent<SoldierAgent>();
-                if (otherAgent != null /*&& otherAgent.squadID == thisAgent.squadID*/)
+                if (otherAgent != null /*&& otherAgent.SquadID == soldier.SquadID*/)
                 {
                     neighbors.Add(col.transform);
                 }

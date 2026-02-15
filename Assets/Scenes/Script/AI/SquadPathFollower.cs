@@ -1,4 +1,4 @@
-using UnityEngine;
+/*using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
@@ -147,7 +147,7 @@ public class SquadPathFollower : MonoBehaviour
                 return waypoint; // On peut aussi stocker ce waypoint dans le soldier pour qu'il l'utilise dans son Update
 
             }
-        }*/
+        }
 
         return waypoint;
         
@@ -212,4 +212,4 @@ public class SquadPathFollower : MonoBehaviour
             Gizmos.DrawWireSphere(currentPath[currentWaypointIndex], 0.7f);
         }
     }
-}
+}*/

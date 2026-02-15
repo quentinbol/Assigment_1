@@ -1,4 +1,4 @@
-using UnityEngine;
+/*using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
@@ -89,4 +89,4 @@ public class ObjectPalette : MonoBehaviour, IPointerClickHandler
     {
         return remainingCount;
     }
-}
+}*/

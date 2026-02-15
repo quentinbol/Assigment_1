@@ -1,4 +1,4 @@
-using UnityEngine;
+/*using UnityEngine;
 using System.Collections.Generic;
 
 public class Squad : MonoBehaviour
@@ -256,4 +256,4 @@ public class Squad : MonoBehaviour
         
         return count > 0 ? center / count : transform.position;
     }
-}
+}*/
