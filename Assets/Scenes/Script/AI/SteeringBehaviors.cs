@@ -38,7 +38,7 @@ public class SteeringBehavior : MonoBehaviour
         acceleration = Vector3.zero;
     }
     
-    protected void ApplyForce(Vector3 force)
+    public void ApplyForce(Vector3 force)
     {
         acceleration += force / mass;
     }

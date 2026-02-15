@@ -30,7 +30,7 @@ public class TestManager : MonoBehaviour
     {
         Manual,
         AutoSequential,
-        AutoSimultaneous
+        AutoSimultaneousa
     }
     
     void Start()
@@ -68,7 +68,7 @@ public class TestManager : MonoBehaviour
         // Envoyer la première escouade
         if (Input.GetKeyDown(startKey))
         {
-            SendSquad(0);
+            SendSquadWithPathfinding(0);
             currentSquadIndex = 1;
         }
         
@@ -77,7 +77,7 @@ public class TestManager : MonoBehaviour
         {
             if (currentSquadIndex < squads.Count)
             {
-                SendSquad(currentSquadIndex);
+                SendSquadWithPathfinding(currentSquadIndex);
                 currentSquadIndex++;
             }
             else
@@ -138,11 +138,30 @@ public class TestManager : MonoBehaviour
         // Calculer l'index de départ des covers pour cette escouade
         // Chaque escouade utilise 6 covers (ou soldier.Count)
         int coverStartIndex = squadIndex * squad.soldiers.Count;
+
         
-        // Utiliser la méthode SendToCover du Squad
         squad.SendToCover(coverObjects, coverStartIndex);
         
         Debug.Log($"[{Time.time:F1}s] Sent {squad.squadName} (covers {coverStartIndex} to {coverStartIndex + squad.soldiers.Count - 1})");
+    }
+
+    void SendSquadWithPathfinding(int squadIndex)
+    {
+        if (squadIndex >= squads.Count) return;
+        
+        Squad squad = squads[squadIndex];
+        SquadPathFollower pathFollower = squad.GetComponent<SquadPathFollower>();
+        
+        if (pathFollower != null)
+        {
+            // Destination = le Finish point
+            Transform finishPoint = GameObject.Find("Finish").transform;
+            Vector3 waypoint = pathFollower.MoveSquadTowardsWaypoint(finishPoint.position);
+            //pathFollower.MoveSquadToDestination(finishPoint.position);
+            squad.SetCurrentWaypoint(waypoint);
+            SendSquad(squadIndex);
+            Debug.Log($"{squad.squadName} : Pathfinding activé vers {finishPoint.position}");
+        }
     }
     
     void ResetTest()
@@ -276,9 +295,9 @@ public class TestManager : MonoBehaviour
                 StartCoroutine(AutoSequentialTest());
                 break;
                 
-            case TestMode.AutoSimultaneous:
+            /*case TestMode.AutoSimultaneous:
                 AutoSimultaneousTest();
-                break;
+                break;*/
         }
     }
     

@@ -46,6 +46,8 @@ public class Squad : MonoBehaviour
     public bool showDebugGizmos = true;
     public float flockingDistanceThreshold;
 
+    Vector3 currentWaypoint;
+
     private void Awake()
     {
         InitializeSquad();
@@ -118,6 +120,22 @@ public class Squad : MonoBehaviour
                 // En mode édition, utiliser sharedMaterial
                 renderer.sharedMaterial = new Material(renderer.sharedMaterial);
                 renderer.sharedMaterial.color = squadColor;
+            }
+        }
+    }
+
+    public void SetCurrentWaypoint(Vector3 waypoint)
+    {
+        currentWaypoint = waypoint;
+    }
+
+    public void SetSoldierWaypoints(Vector3 waypoint)
+    {
+        foreach (var soldier in soldiers)
+        {
+            if (soldier != null && soldier.currentState == SoldierState.Moving)
+            {
+                soldier.SetCurrentWaypoint(waypoint);
             }
         }
     }
