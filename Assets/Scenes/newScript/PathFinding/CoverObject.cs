@@ -70,27 +70,27 @@ public class CoverObject : MonoBehaviour
         
         if (isFixed)
         {
-            objectMaterial.color = normalColor; // objets fixes
+            objectMaterial.color = normalColor;
         }
         if (!isPlaceable)
         {
-            objectMaterial.color = normalColor; // objets fixes
+            objectMaterial.color = normalColor;
         }
         else if (isHovered && !isPlaced)
         {
-            objectMaterial.color = hoverColor; // survol pendant placement
+            objectMaterial.color = hoverColor;
         }
         else if (isOccupied)
         {
-            objectMaterial.color = occupiedColor; // occupe par un soldat
+            objectMaterial.color = occupiedColor;
         }
         else if (isPlaced)
         {
-            objectMaterial.color = placedColor; // place et libre
+            objectMaterial.color = placedColor;
         }
         else
         {
-            objectMaterial.color = normalColor; // pas encore place
+            objectMaterial.color = normalColor;
         }
     }
 }

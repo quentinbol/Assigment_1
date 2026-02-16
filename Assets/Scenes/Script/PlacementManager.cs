@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+/*using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
@@ -384,4 +384,4 @@ public class PlacementManager : MonoBehaviour
             Gizmos.DrawLine(corners[i], corners[(i + 1) % 4]);
         }
     }
-}
+}*/

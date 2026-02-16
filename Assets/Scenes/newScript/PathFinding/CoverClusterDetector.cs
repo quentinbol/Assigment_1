@@ -2,22 +2,17 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-/// <summary>
-/// Représente un cluster (groupe) de covers proches
-/// Permet de détecter des groupes de covers pouvant accueillir une squad
-/// </summary>
 public class CoverCluster
 {
     public List<CoverObject> covers;
     public Vector3 centerPosition;
-    public int availableCount; // Nombre de covers libres
+    public int availableCount;
     
     public CoverCluster(List<CoverObject> covers)
     {
         this.covers = covers;
         this.availableCount = covers.Count(c => !c.isOccupied);
-        
-        // Calculer le centre du cluster
+
         if (covers.Count > 0)
         {
             Vector3 sum = Vector3.zero;
