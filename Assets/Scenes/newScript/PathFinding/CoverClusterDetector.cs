@@ -66,11 +66,19 @@ public class CoverClusterDetector : MonoBehaviour
     /// </summary>
     public CoverCluster FindBestClusterForSquad(Vector3 squadPosition, int squadSize)
     {
-        // Récupérer tous les covers dans le rayon de détection
+        // Récupérer tous les covers
         CoverObject[] allCovers = FindObjectsByType<CoverObject>(FindObjectsSortMode.None);
-        List<CoverObject> nearbyCovers = allCovers
+        return FindBestClusterForSquad(squadPosition, squadSize, allCovers.ToList());
+    }
+    
+    /// <summary>
+    /// Trouve le meilleur cluster parmi une liste de covers spécifique
+    /// </summary>
+    public CoverCluster FindBestClusterForSquad(Vector3 squadPosition, int squadSize, List<CoverObject> coversToConsider)
+    {
+        // Filtrer les covers dans le rayon de détection et non occupés
+        List<CoverObject> nearbyCovers = coversToConsider
             .Where(c => Vector3.Distance(squadPosition, c.transform.position) <= detectionRadius)
-            .Where(c => !c.isOccupied)
             .ToList();
         
         if (nearbyCovers.Count < squadSize)
@@ -84,14 +92,14 @@ public class CoverClusterDetector : MonoBehaviour
         
         // Filtrer les clusters qui peuvent accueillir toute la squad
         List<CoverCluster> validClusters = clusters
-            .Where(c => c.availableCount >= squadSize)
+            .Where(c => c.covers.Count >= squadSize) // Au moins assez de covers au total
             .ToList();
         
         if (validClusters.Count == 0)
         {
             if (showDebugLogs)
             {
-                Debug.Log($"[CoverCluster] Aucun cluster trouvé pour {squadSize} soldats");
+                Debug.Log($"[CoverCluster] Aucun cluster trouvé pour {squadSize} soldats (covers: {nearbyCovers.Count})");
             }
             return null;
         }
@@ -100,6 +108,9 @@ public class CoverClusterDetector : MonoBehaviour
         CoverCluster bestCluster = validClusters
             .OrderBy(c => Vector3.Distance(squadPosition, c.centerPosition))
             .First();
+        
+        // Recalculer availableCount sur les covers non occupés
+        bestCluster.availableCount = bestCluster.covers.Count(c => !c.isOccupied);
         
         if (showDebugLogs)
         {

@@ -24,6 +24,7 @@ public class InCoverState : SoldierState
         if (currentCover != null && !currentCover.isOccupied)
         {
             currentCover.SetOccupied(soldier);
+            soldier.StopAndIdle();
         }
         
         Debug.Log($"{soldier.name} : En cover (attend ordre de la squad)");

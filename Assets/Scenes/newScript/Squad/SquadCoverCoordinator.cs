@@ -11,13 +11,14 @@ public class SquadCoverCoordinator : MonoBehaviour
     [Header("References")]
     public SquadController squadController;
     public WaypointPathFollower waypointPathFollower;
+    public CoverLeaveDecisionMaker leaveDecisionMaker; // NOUVEAU
     
     [Header("Cluster Detection")]
     [Tooltip("Fréquence de scan pour détecter des clusters")]
     public float clusterScanInterval = 1f;
     
     [Tooltip("Distance min pour considérer un cluster (évite clusters trop proches)")]
-    public float minClusterDistance = 8f;
+    public float minClusterDistance = 1f; // RÉDUIT de 8 à 1
     
     [Header("Cover Timing")]
     [Tooltip("Temps que la squad reste en cover avant de repartir")]
@@ -61,7 +62,7 @@ public class SquadCoverCoordinator : MonoBehaviour
     /// </summary>
     void UpdateMovingState()
     {
-        // Scanner périodiquement pour des clusters
+        // Scanner périodiquement pour des clusters UNIQUEMENT en état Moving
         if (Time.time - lastClusterScanTime > clusterScanInterval)
         {
             lastClusterScanTime = Time.time;
@@ -74,6 +75,12 @@ public class SquadCoverCoordinator : MonoBehaviour
     /// </summary>
     void ScanForCoverCluster()
     {
+        // NE PAS scanner si on est déjà en train d'aller vers un cluster
+        if (currentState != SquadCoverState.Moving)
+        {
+            return;
+        }
+        
         if (CoverClusterDetector.Instance == null)
         {
             Debug.LogWarning("[SquadCoverCoordinator] CoverClusterDetector non trouvé !");
@@ -93,10 +100,19 @@ public class SquadCoverCoordinator : MonoBehaviour
             // Vérifier distance minimale (ne pas aller à un cluster trop proche, on y est peut-être déjà)
             float distance = Vector3.Distance(squadPosition, cluster.centerPosition);
             
+            if (showDebugLogs)
+            {
+                Debug.Log($"[SquadCoverCoordinator] Cluster à {distance:F1}m, min requis: {minClusterDistance}m");
+            }
+            
             if (distance > minClusterDistance)
             {
                 // CLUSTER TROUVÉ ! Ordonner à la squad d'y aller
                 OrderSquadToCluster(cluster);
+            }
+            else if (showDebugLogs)
+            {
+                Debug.Log($"[SquadCoverCoordinator] ❌ Cluster trop proche ({distance:F1}m < {minClusterDistance}m) - ignoré");
             }
         }
     }
@@ -119,18 +135,40 @@ public class SquadCoverCoordinator : MonoBehaviour
         List<SoldierAgent> soldiers = squadController.GetSoldiers();
         List<CoverObject> availableCovers = cluster.covers.Where(c => !c.isOccupied).ToList();
         
+        if (showDebugLogs)
+        {
+            Debug.Log($"[SquadCoverCoordinator] Soldats: {soldiers.Count}, Covers dispo: {availableCovers.Count}");
+        }
+        
         for (int i = 0; i < soldiers.Count && i < availableCovers.Count; i++)
         {
+            if (soldiers[i] == null)
+            {
+                Debug.LogWarning($"[SquadCoverCoordinator] Soldier {i} est NULL !");
+                continue;
+            }
+            
+            if (availableCovers[i] == null)
+            {
+                Debug.LogWarning($"[SquadCoverCoordinator] Cover {i} est NULL !");
+                continue;
+            }
+            
             // Assigner le cover
             soldiers[i].AssignCover(availableCovers[i].transform);
             
-            // CORRECTION : Utiliser GoToAssignedCover au lieu de SeekNearbyCover
+            if (showDebugLogs)
+            {
+                Debug.Log($"[SquadCoverCoordinator] {soldiers[i].name} → {availableCovers[i].name}");
+            }
+            
+            // Transition vers GoToAssignedCover
             soldiers[i].GoToAssignedCover();
         }
         
         if (showDebugLogs)
         {
-            Debug.Log($"[SquadCoverCoordinator] 📍 {soldiers.Count} soldats assignés aux covers");
+            Debug.Log($"[SquadCoverCoordinator] 📍 Assignations terminées, état = {currentState}");
         }
     }
     
@@ -153,20 +191,46 @@ public class SquadCoverCoordinator : MonoBehaviour
     }
     
     /// <summary>
-    /// État : Squad en cover, attend avant de repartir
+    /// État : Squad en cover, évalue stratégiquement si elle peut partir
     /// </summary>
     void UpdateInCoverState()
     {
         float timePassed = Time.time - timeEnteredCover;
         
-        if (timePassed >= timeInCover)
+        // Attendre au moins le temps minimum
+        if (timePassed < timeInCover)
         {
-            // Temps écoulé, repartir !
-            if (showDebugLogs)
-            {
-                Debug.Log($"[SquadCoverCoordinator] ⏰ Temps écoulé → Reprise du mouvement");
-            }
+            return;
+        }
+        
+        // DÉCISION STRATÉGIQUE : Peut-on partir ?
+        if (leaveDecisionMaker != null)
+        {
+            // Trouver le prochain cluster (EXCLUANT le cluster actuel)
+            CoverCluster nextCluster = leaveDecisionMaker.FindNextCluster(squadController, targetCluster);
             
+            // Évaluer si on peut partir
+            bool canLeave = leaveDecisionMaker.CanLeaveCovers(squadController, nextCluster);
+            
+            if (canLeave)
+            {
+                if (showDebugLogs)
+                {
+                    Debug.Log($"[SquadCoverCoordinator] ✅ Conditions remplies → Départ autorisé");
+                }
+                OrderSquadToResume();
+            }
+            else
+            {
+                if (showDebugLogs && Time.frameCount % 120 == 0) // Log toutes les 2 secondes
+                {
+                    Debug.Log($"[SquadCoverCoordinator] ⏳ Conditions non remplies → Reste en cover");
+                }
+            }
+        }
+        else
+        {
+            // Fallback : timer simple si pas de decision maker
             OrderSquadToResume();
         }
     }
