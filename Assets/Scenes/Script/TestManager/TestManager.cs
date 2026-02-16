@@ -108,28 +108,4 @@ public class TestManager : MonoBehaviour
             }
         }
     }
-    
-    void OnGUI()
-    {
-        if (!showDebugLogs) return;
-        
-        GUILayout.BeginArea(new Rect(10, 10, 300, 200));
-        GUILayout.BeginVertical("box");
-        
-        GUILayout.Label("=== TEST MANAGER ===");
-        GUILayout.Label($"Game Started: {gameStarted}");
-        
-        if (squadControllers.Count > 0 && squads.Count > 0)
-        {
-            SquadController squadController = squadControllers[0];
-            Squad squad = squads[0];
-            GUILayout.Space(5);
-            GUILayout.Label($"Squad: {squad.squadName}");
-            GUILayout.Label($"Moving: {squadController.IsSquadMoving()}");
-            GUILayout.Label($"In Cover: {squadController.GetInCoverCount()}/{squadController.GetAliveCount()}");
-        }
-        
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
-    }
 }

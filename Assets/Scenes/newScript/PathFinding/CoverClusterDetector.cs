@@ -42,6 +42,7 @@ public class CoverClusterDetector : MonoBehaviour
     [Tooltip("Distance max pour détecter des clusters depuis la squad")]
     public float detectionRadius = 20f;
     
+    
     [Header("Debug")]
     public bool showDebugLogs = true;
     public bool visualizeClusters = true;
