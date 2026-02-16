@@ -1,7 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// État "en cover" - le soldat est immobile derrière un cover
+/// État "en cover" - attend jusqu'à ce qu'on lui ordonne de partir
+/// Pas de timer automatique, c'est le SquadCoverCoordinator qui décide
 /// </summary>
 public class InCoverState : SoldierState
 {
@@ -24,14 +25,16 @@ public class InCoverState : SoldierState
         {
             currentCover.SetOccupied(soldier);
         }
+        
+        Debug.Log($"{soldier.name} : En cover (attend ordre de la squad)");
     }
     
     public override void Execute()
     {
         base.Execute();
         
-        // Le soldat reste immobile
-        // Optionnel : ajouter ici des micro-mouvements, animations, etc.
+        // Reste en cover jusqu'à ce qu'on lui ordonne de partir
+        // Le SquadCoverCoordinator appellera JoinSquadMovement() quand c'est le moment
     }
     
     public override void OnExit()
@@ -43,5 +46,7 @@ public class InCoverState : SoldierState
         {
             currentCover.SetFree();
         }
+        
+        Debug.Log($"{soldier.name} : Quitte le cover");
     }
 }

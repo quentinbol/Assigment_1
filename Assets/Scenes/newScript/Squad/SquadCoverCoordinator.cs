@@ -95,8 +95,6 @@ public class SquadCoverCoordinator : MonoBehaviour
             
             if (distance > minClusterDistance)
             {
-                Debug.Log($"[SquadCoverCoordinator] Cluster détecté à {Vector3.Distance(squadPosition, cluster.centerPosition):F1}m " +
-                      $"avec {cluster.availableCount} covers disponibles");
                 // CLUSTER TROUVÉ ! Ordonner à la squad d'y aller
                 OrderSquadToCluster(cluster);
             }
@@ -123,8 +121,11 @@ public class SquadCoverCoordinator : MonoBehaviour
         
         for (int i = 0; i < soldiers.Count && i < availableCovers.Count; i++)
         {
+            // Assigner le cover
             soldiers[i].AssignCover(availableCovers[i].transform);
-            soldiers[i].SeekNearbyCover(); // Transition vers le cover assigné
+            
+            // CORRECTION : Utiliser GoToAssignedCover au lieu de SeekNearbyCover
+            soldiers[i].GoToAssignedCover();
         }
         
         if (showDebugLogs)
@@ -182,7 +183,7 @@ public class SquadCoverCoordinator : MonoBehaviour
             if (soldier != null)
             {
                 soldier.ReleaseCover();
-                soldier.JoinSquadMovement();
+                soldier.JoinSquadMovement(); // Retour en mouvement normal
             }
         }
         

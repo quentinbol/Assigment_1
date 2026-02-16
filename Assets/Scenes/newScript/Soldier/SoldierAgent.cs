@@ -111,6 +111,14 @@ public class SoldierAgent : MonoBehaviour
             currentCover = cover.GetComponent<CoverObject>();
         }
     }
+
+    public void GoToAssignedCover()
+    {
+        if (stateMachine != null)
+        {
+            stateMachine.TransitionTo<GoToAssignedCoverState>();
+        }
+    }
     
     public void ReleaseCover()
     {
