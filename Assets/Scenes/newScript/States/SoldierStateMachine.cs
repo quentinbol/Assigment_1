@@ -57,7 +57,17 @@ public class SoldierStateMachine : MonoBehaviour
         if (!stateCache.ContainsKey(stateType))
         {
             Debug.Log($"[{gameObject.name}] Création de {stateType.Name}");
-            stateCache[stateType] = (SoldierState)Activator.CreateInstance(stateType, soldier);
+            
+            // CORRECTION : Passer le SoldierAgent en paramètre
+            try
+            {
+                stateCache[stateType] = (SoldierState)Activator.CreateInstance(stateType, new object[] { soldier });
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[{gameObject.name}] ERREUR création de {stateType.Name}: {e.Message}");
+                return;
+            }
         }
         
         TransitionTo(stateCache[stateType]);

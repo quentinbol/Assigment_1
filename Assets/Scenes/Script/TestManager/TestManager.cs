@@ -11,10 +11,11 @@ public class TestManager : MonoBehaviour
 {
     [Header("Game Start")]
     public KeyCode startKey = KeyCode.Space;
+    public KeyCode sendNextSquadKey = KeyCode.N;
     public bool gameStarted = false;
     
     [Header("Squad")]
-    public Squad squad; // Une seule squad pour le test
+    public List<Squad> squads = new List<Squad>();
     
     [Header("Destination")]
     public Transform finishPoint; // Point de fin du canyon
@@ -22,16 +23,17 @@ public class TestManager : MonoBehaviour
     [Header("Debug")]
     public bool showDebugLogs = true;
     
-    private SquadController squadController;
+    private List<SquadController> squadControllers = new List<SquadController>();
     
     void Start()
     {
-        // Récupérer le SquadController
-        if (squad != null)
+        // Récupérer le SquadController pour chaque squad
+        foreach (Squad squad in squads)
         {
-            squadController = squad.GetComponent<SquadController>();
+            SquadController squadController = squad.GetComponent<SquadController>();
             if (squadController != null)
             {
+                squadControllers.Add(squadController);
                 squadController.RefreshSoldierList();
             }
             else
@@ -53,6 +55,10 @@ public class TestManager : MonoBehaviour
         {
             StartGame();
         }
+        if (Input.GetKeyDown(sendNextSquadKey) && gameStarted)
+        {
+            SendNextSquad();
+        }
     }
     
     void StartGame()
@@ -64,20 +70,42 @@ public class TestManager : MonoBehaviour
             Debug.Log("=== JEU COMMENCE ===");
         }
         
-        if (squadController == null || finishPoint == null)
+        if (squadControllers.Count == 0 || finishPoint == null)
         {
             Debug.LogError("Squad ou FinishPoint manquant !");
             return;
         }
         
-        // Envoyer la squad vers la fin du canyon
-        // Les soldats chercheront automatiquement des covers à proximité pendant le trajet
-        squadController.MoveSquadToDestination(finishPoint.position);
+        
+        squadControllers[0].MoveSquadToDestination(finishPoint.position);
         
         if (showDebugLogs)
         {
-            Debug.Log($"[{squad.squadName}] Envoyée vers la fin du canyon !");
+            Debug.Log($"[{squads[0].squadName}] Envoyée vers la fin du canyon !");
             Debug.Log("Les soldats chercheront des covers proches automatiquement.");
+        }
+    }
+    
+    void SendNextSquad()
+    {
+        if (squadControllers.Count == 0 || finishPoint == null)
+        {
+            Debug.LogError("Squad ou FinishPoint manquant !");
+            return;
+        }
+
+        for (int i = 1; i < squadControllers.Count; i++)
+        {
+            if (!squadControllers[i].IsSquadMoving())
+            {
+                squadControllers[i].MoveSquadToDestination(finishPoint.position);
+                
+                if (showDebugLogs)
+                {
+                    Debug.Log($"[{squads[i].squadName}] Envoyée vers la fin du canyon !");
+                }
+                return;
+            }
         }
     }
     
@@ -91,8 +119,10 @@ public class TestManager : MonoBehaviour
         GUILayout.Label("=== TEST MANAGER ===");
         GUILayout.Label($"Game Started: {gameStarted}");
         
-        if (squadController != null && squad != null)
+        if (squadControllers.Count > 0 && squads.Count > 0)
         {
+            SquadController squadController = squadControllers[0];
+            Squad squad = squads[0];
             GUILayout.Space(5);
             GUILayout.Label($"Squad: {squad.squadName}");
             GUILayout.Label($"Moving: {squadController.IsSquadMoving()}");

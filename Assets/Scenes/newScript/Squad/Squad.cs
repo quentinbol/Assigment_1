@@ -10,6 +10,7 @@ public class Squad : MonoBehaviour
     [Header("Squad Identity")]
     public string squadName = "Alpha";
     public int squadID = 0;
+    public Color squadColor = Color.blue;
     
     [Header("Soldiers")]
     public List<SoldierAgent> soldiers = new List<SoldierAgent>();

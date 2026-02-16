@@ -60,6 +60,27 @@ public class SteeringBehaviors : MonoBehaviour
         Vector3 steer = desired - movement.Velocity;
         return Vector3.ClampMagnitude(steer, maxForce);
     }
+
+    /// <summary>
+    /// Calcule la force de seek vers une position (SANS ralentissement)
+    /// Utilisé pour suivre les waypoints à vitesse constante
+    /// </summary>
+    public Vector3 Seek(Vector3 targetPosition)
+    {
+        Vector3 desired = targetPosition - transform.position;
+        desired.y = 0; // Garder sur le plan horizontal
+        
+        if (desired.magnitude < 0.01f)
+        {
+            return Vector3.zero;
+        }
+        
+        // Vitesse constante, pas de ralentissement
+        desired = desired.normalized * maxSpeed;
+        
+        Vector3 steer = desired - movement.Velocity;
+        return Vector3.ClampMagnitude(steer, maxForce);
+    }
     
     /// <summary>
     /// Calcule la force de séparation par rapport aux voisins

@@ -42,29 +42,24 @@ public class IndividualMovementState : SoldierState
     public override void Execute()
     {
         base.Execute();
-        
-        // Vérifier qu'on a un cover
+
         if (targetCover == null)
         {
             Debug.LogWarning($"{soldier.name} : Pas de target cover - retour à Idle");
             soldier.StateMachine.TransitionTo<IdleState>();
             return;
         }
-        
-        // Vérifier si on est arrivé
+
         float distanceToCover = Vector3.Distance(transform.position, targetCover.position);
         if (distanceToCover < arrivalThreshold && movement.GetSpeed() < 0.5f)
         {
-            // On est arrivé ! Transition vers InCover
             soldier.StateMachine.TransitionTo<InCoverState>();
             return;
         }
-        
-        // 1. ARRIVE vers le cover
+
         Vector3 arriveForce = steering.Arrive(targetCover.position);
         movement.ApplyForce(arriveForce * arriveWeight);
-        
-        // 2. SEPARATION pour éviter les autres soldats
+
         List<Transform> allNeighbors = steering.FindNeighbors(steering.separationRadius, sameSquadOnly: false);
         if (allNeighbors.Count > 0)
         {

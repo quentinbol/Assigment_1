@@ -2,8 +2,8 @@ using UnityEngine;
 using System.Collections.Generic;
 
 /// <summary>
-/// État "mouvement en squad" - le soldat suit le chemin A* de sa squad
-/// avec flocking et cohésion
+/// État "mouvement en squad" - compatible avec WaypointPathFollower
+/// Le soldat suit le chemin de waypoints avec flocking
 /// </summary>
 public class SquadMovementState : SoldierState
 {
@@ -14,9 +14,10 @@ public class SquadMovementState : SoldierState
     private float alignmentWeight = 1.0f;
     
     [Header("Distances")]
-    private float flockingActivationDistance = 10f; // Active le flocking si on est loin du waypoint
+    private float flockingActivationDistance = 10f;
     
-    private SquadPathFollower squadPathFollower;
+    private WaypointPathFollower waypointPathFollower;
+    private SquadPathFollower squadPathFollower; // Backup si pas de waypoints
     
     public SquadMovementState(SoldierAgent soldier) : base(soldier) { }
     
@@ -24,13 +25,19 @@ public class SquadMovementState : SoldierState
     {
         base.OnEnter();
         
-        // Récupérer le path follower de la squad
+        // Essayer de récupérer WaypointPathFollower en priorité
         if (soldier.ParentSquad != null)
         {
-            squadPathFollower = soldier.ParentSquad.GetComponent<SquadPathFollower>();
+            waypointPathFollower = soldier.ParentSquad.GetComponent<WaypointPathFollower>();
+            
+            // Backup : ancien système
+            if (waypointPathFollower == null)
+            {
+                squadPathFollower = soldier.ParentSquad.GetComponent<SquadPathFollower>();
+            }
         }
         
-        // Synchroniser les paramètres avec la squad
+        // Synchroniser les poids
         if (soldier.ParentSquad != null)
         {
             arriveWeight = soldier.ParentSquad.arriveWeight;
@@ -45,19 +52,28 @@ public class SquadMovementState : SoldierState
     {
         base.Execute();
         
-        // Vérifier qu'on a bien un path follower
-        if (squadPathFollower == null || !squadPathFollower.IsFollowingPath())
+        Vector3 targetPosition;
+        
+        // Déterminer la position cible selon le système utilisé
+        if (waypointPathFollower != null && waypointPathFollower.IsFollowingPath())
         {
-            Debug.LogWarning($"{soldier.name} : SquadPathFollower introuvable ou inactif");
+            targetPosition = waypointPathFollower.GetCurrentTargetPosition();
+        }
+        else if (squadPathFollower != null && squadPathFollower.IsFollowingPath())
+        {
+            targetPosition = squadPathFollower.GetCurrentWaypoint();
+        }
+        else
+        {
+            // Aucun path actif
             return;
         }
         
-        // 1. ARRIVE vers le waypoint actuel de la squad
-        Vector3 currentWaypoint = squadPathFollower.GetCurrentWaypoint();
-        Vector3 arriveForce = steering.Arrive(currentWaypoint);
-        movement.ApplyForce(arriveForce * arriveWeight);
+        // 1. SEEK vers la position cible (pas de ralentissement pour les waypoints)
+        Vector3 seekForce = steering.Seek(targetPosition);
+        movement.ApplyForce(seekForce * arriveWeight);
         
-        // 2. SEPARATION (toujours active pour éviter les collisions)
+        // 2. SEPARATION (toujours active)
         List<Transform> allNeighbors = steering.FindNeighbors(steering.separationRadius, sameSquadOnly: false);
         if (allNeighbors.Count > 0)
         {
@@ -65,28 +81,21 @@ public class SquadMovementState : SoldierState
             movement.ApplyForce(separationForce * separationWeight);
         }
         
-        // 3. FLOCKING (cohésion + alignment) - seulement si on est loin du waypoint
-        float distanceToWaypoint = Vector3.Distance(transform.position, currentWaypoint);
+        // 3. FLOCKING (si loin de la cible)
+        float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
         
-        if (distanceToWaypoint > flockingActivationDistance)
+        if (distanceToTarget > flockingActivationDistance)
         {
             List<Transform> squadNeighbors = steering.FindNeighbors(steering.cohesionRadius, sameSquadOnly: true);
             
             if (squadNeighbors.Count > 0)
             {
-                // Cohésion : rester groupés
                 Vector3 cohesionForce = steering.Cohesion(squadNeighbors);
                 movement.ApplyForce(cohesionForce * cohesionWeight);
                 
-                // Alignment : même direction que les voisins
                 Vector3 alignmentForce = steering.Alignment(squadNeighbors);
                 movement.ApplyForce(alignmentForce * alignmentWeight);
             }
         }
-    }
-    
-    public override void OnExit()
-    {
-        base.OnExit();
     }
 }

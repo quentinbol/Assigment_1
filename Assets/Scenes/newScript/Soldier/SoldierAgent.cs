@@ -8,6 +8,8 @@ public class SoldierAgent : MonoBehaviour
     [Header("References")]
     [SerializeField] private Squad parentSquad;
     [SerializeField] private int squadID;
+
+    [SerializeField] private string soldierColor;
     
     [Header("Cover")]
     [SerializeField] private Transform assignedCoverTransform;
@@ -37,7 +39,29 @@ public class SoldierAgent : MonoBehaviour
         if (movement == null) movement = gameObject.AddComponent<MovementController>();
         if (steering == null) steering = gameObject.AddComponent<SteeringBehaviors>();
     }
-    
+
+    private MaterialPropertyBlock _mpb;
+
+    void OnValidate()
+    {
+        if (parentSquad == null)
+            return;
+
+        soldierColor = parentSquad.squadColor.ToString();
+
+        Renderer renderer = GetComponentInChildren<Renderer>();
+        if (renderer == null)
+            return;
+
+        if (_mpb == null)
+            _mpb = new MaterialPropertyBlock();
+
+        renderer.GetPropertyBlock(_mpb);
+        _mpb.SetColor("_Color", parentSquad.squadColor);
+        renderer.SetPropertyBlock(_mpb);
+    }
+
+
     void Start()
     {
         if (parentSquad == null)
@@ -138,7 +162,7 @@ public class SoldierAgent : MonoBehaviour
     {
         if (stateMachine != null)
         {
-            //stateMachine.TransitionTo<SeekNearbyCoverState>();
+            stateMachine.TransitionTo<IndividualMovementState>();
         }
     }
     
