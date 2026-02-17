@@ -1,17 +1,15 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-// Représente une cellule de la grille
 public class PathNode
 {
     public Vector3 worldPosition;
     public int gridX;
     public int gridY;
     public bool isWalkable;
-    
-    // Pour l'algorithme A*
-    public int gCost; // Distance du départ
-    public int hCost; // Distance estimée jusqu'à l'arrivée (heuristique)
+
+    public int gCost;
+    public int hCost;
     public PathNode parent;
     
     public PathNode(Vector3 worldPos, int x, int y, bool walkable)
@@ -31,12 +29,12 @@ public class PathNode
 public class PathFindingGrid : MonoBehaviour
 {
     [Header("Grid Settings")]
-    public Vector2 gridWorldSize = new Vector2(50, 100); // Largeur x Longueur du canyon
-    public float nodeRadius = 0.5f; // Taille d'une cellule
-    public LayerMask unwalkableMask; // Layer des obstacles (covers, murs, etc.)
+    public Vector2 gridWorldSize = new Vector2(50, 100);
+    public float nodeRadius = 0.5f;
+    public LayerMask unwalkableMask;
     
     [Header("Grid Position")]
-    public Transform gridCenter; // Centre de la grille (milieu du canyon)
+    public Transform gridCenter;
     
     private PathNode[,] grid;
     private float nodeDiameter;
@@ -65,8 +63,6 @@ public class PathFindingGrid : MonoBehaviour
                 Vector3 worldPoint = worldBottomLeft 
                     + Vector3.right * (x * nodeDiameter + nodeRadius) 
                     + Vector3.forward * (y * nodeDiameter + nodeRadius);
-                
-                // Vérifier si cette position est walkable
                 bool walkable = !Physics.CheckSphere(worldPoint, nodeRadius, unwalkableMask);
                 
                 grid[x, y] = new PathNode(worldPoint, x, y, walkable);
@@ -75,19 +71,16 @@ public class PathFindingGrid : MonoBehaviour
         
         Debug.Log($"Grid créée : {gridSizeX}x{gridSizeY} = {gridSizeX * gridSizeY} nodes");
     }
-    
-    // Obtenir les voisins d'un node (4 directions ou 8 avec diagonales)
+
     public List<PathNode> GetNeighbors(PathNode node, bool includeDiagonals = false)
     {
         List<PathNode> neighbors = new List<PathNode>();
-        
-        // 4 directions cardinales
-        CheckAndAddNeighbor(neighbors, node.gridX - 1, node.gridY);     // Gauche
-        CheckAndAddNeighbor(neighbors, node.gridX + 1, node.gridY);     // Droite
-        CheckAndAddNeighbor(neighbors, node.gridX, node.gridY + 1);     // Haut
-        CheckAndAddNeighbor(neighbors, node.gridX, node.gridY - 1);     // Bas
-        
-        // 4 directions diagonales (optionnel)
+
+        CheckAndAddNeighbor(neighbors, node.gridX - 1, node.gridY);
+        CheckAndAddNeighbor(neighbors, node.gridX + 1, node.gridY);
+        CheckAndAddNeighbor(neighbors, node.gridX, node.gridY + 1);
+        CheckAndAddNeighbor(neighbors, node.gridX, node.gridY - 1);
+
         if (includeDiagonals)
         {
             CheckAndAddNeighbor(neighbors, node.gridX - 1, node.gridY + 1);
@@ -106,8 +99,7 @@ public class PathFindingGrid : MonoBehaviour
             neighbors.Add(grid[x, y]);
         }
     }
-    
-    // Convertir une position mondiale en node de la grille
+
     public PathNode NodeFromWorldPoint(Vector3 worldPosition)
     {
         Vector3 localPos = worldPosition - (gridCenter.position 
@@ -119,8 +111,7 @@ public class PathFindingGrid : MonoBehaviour
         
         return grid[x, y];
     }
-    
-    // Visualisation dans l'éditeur
+
     void OnDrawGizmos()
     {
         Gizmos.DrawWireCube(gridCenter.position, new Vector3(gridWorldSize.x, 1, gridWorldSize.y));

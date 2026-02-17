@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Responsable UNIQUEMENT de l'application des forces et de la mise à jour de la vélocité
-/// Aucune logique de comportement ici - juste de la physique pure
-/// </summary>
 public class MovementController : MonoBehaviour
 {
     [Header("Movement Parameters")]
@@ -45,11 +41,8 @@ public class MovementController : MonoBehaviour
     public void UpdateMovement()
     {
         velocity += acceleration * Time.deltaTime;
-
         velocity = Vector3.ClampMagnitude(velocity, maxSpeed);
-
         transform.position += velocity * Time.deltaTime;
-
         if (velocity.magnitude > 0.1f)
         {
             transform.forward = velocity.normalized;
@@ -69,10 +62,8 @@ public class MovementController : MonoBehaviour
     void OnDrawGizmos()
     {
         if (!showVelocity) return;
-        
         Gizmos.color = Color.green;
         Gizmos.DrawLine(transform.position, transform.position + velocity);
-        
         Gizmos.color = Color.red;
         Gizmos.DrawLine(transform.position, transform.position + acceleration);
     }

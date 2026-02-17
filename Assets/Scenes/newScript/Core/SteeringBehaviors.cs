@@ -3,21 +3,21 @@ using System.Collections.Generic;
 
 public class SteeringBehaviors : MonoBehaviour
 {
-    [Header("Arrival Parameters")]
+    [Header("arrival parameters")]
     public float slowingRadius = 3f;
     public float arrivalRadius = 0.5f;
     public float stopRadius = 0.3f;
     
-    [Header("Flocking Parameters")]
+    [Header("flocking parameters")]
     public float separationRadius = 1.5f;
     public float cohesionRadius = 5f;
     public float alignmentRadius = 5f;
     
-    [Header("Force Limits")]
+    [Header("force limits")]
     public float maxSpeed = 5f;
     public float maxForce = 10f;
     
-    [Header("Detection")]
+    [Header("detection")]
     public LayerMask soldierLayer;
     
     private MovementController movement;
@@ -34,36 +34,28 @@ public class SteeringBehaviors : MonoBehaviour
         Vector3 desired = targetPosition - transform.position;
         float distance = desired.magnitude;
         desired.y = 0;
-        
         if (distance < 0.01f)
         {
             return Vector3.zero;
         }
-        
         float speed = maxSpeed;
-
         if (distance < slowingRadius)
         {
             speed = maxSpeed * (distance / slowingRadius);
         }
-        
         desired = desired.normalized * speed;
-        
         Vector3 steer = desired - movement.Velocity;
         return Vector3.ClampMagnitude(steer, maxForce);
     }
     public Vector3 Seek(Vector3 targetPosition)
     {
         Vector3 desired = targetPosition - transform.position;
-        desired.y = 0; // Garder sur le plan horizontal
-        
+        desired.y = 0;
         if (desired.magnitude < 0.01f)
         {
             return Vector3.zero;
         }
-
         desired = desired.normalized * maxSpeed;
-        
         Vector3 steer = desired - movement.Velocity;
         return Vector3.ClampMagnitude(steer, maxForce);
     }
@@ -72,7 +64,6 @@ public class SteeringBehaviors : MonoBehaviour
     {
         Vector3 steer = Vector3.zero;
         int count = 0;
-        
         foreach (Transform other in neighbors)
         {
             float distance = Vector3.Distance(transform.position, other.position);
@@ -86,7 +77,6 @@ public class SteeringBehaviors : MonoBehaviour
                 count++;
             }
         }
-        
         if (count > 0)
         {
             steer /= count;
@@ -121,19 +111,19 @@ public class SteeringBehaviors : MonoBehaviour
     {
         if (neighbors.Count == 0) return Vector3.zero;
         
-        Vector3 avgVel = Vector3.zero;
+        Vector3 avegageVel = Vector3.zero;
         foreach (Transform other in neighbors)
         {
             MovementController otherMovement = other.GetComponent<MovementController>();
             if (otherMovement != null)
             {
-                avgVel += otherMovement.Velocity;
+                avegageVel += otherMovement.Velocity;
             }
         }
-        avgVel /= neighbors.Count;
+        avegageVel /= neighbors.Count;
         
-        avgVel = avgVel.normalized * maxSpeed;
-        Vector3 steer = avgVel - movement.Velocity;
+        avegageVel = avegageVel.normalized * maxSpeed;
+        Vector3 steer = avegageVel - movement.Velocity;
         return Vector3.ClampMagnitude(steer, maxForce);
     }
 

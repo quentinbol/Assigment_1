@@ -3,13 +3,13 @@ using UnityEngine.AI;
 
 public class CoverObject : MonoBehaviour
 {
-    [Header("Cover Properties")]
+    [Header("cover properties")]
     public bool isPlaceable = true;
     public bool isFixed = false;
     public bool isOccupied = false;
     public SoldierAgent occupyingSoldier = null;
     
-    [Header("Placement")]
+    [Header("placement")]
     public bool isPlaced = false;
     public Color normalColor = Color.gray;
     public Color placedColor = Color.green;

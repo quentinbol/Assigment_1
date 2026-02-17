@@ -1,16 +1,12 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-/// <summary>
-/// Définit un chemin avec plusieurs waypoints que la squad doit suivre
-/// Place ce script sur un GameObject vide et ajoute des waypoints dans l'Inspector
-/// </summary>
 public class WaypointPath : MonoBehaviour
 {
-    [Header("Waypoints")]
+    [Header("waypoints")]
     public List<Transform> waypoints = new List<Transform>();
     
-    [Header("Visual Debug")]
+    [Header("visual debug")]
     public bool showPath = true;
     public Color pathColor = Color.yellow;
     public float sphereRadius = 1f;

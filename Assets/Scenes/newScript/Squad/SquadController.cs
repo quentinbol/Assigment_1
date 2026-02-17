@@ -1,17 +1,14 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-/// <summary>
-/// SquadController compatible avec WaypointPathFollower
-/// </summary>
 public class SquadController : MonoBehaviour
 {
     [Header("References")]
     public Squad squad;
     
     [Header("Path Follower (choisir UN seul)")]
-    public WaypointPathFollower waypointPathFollower; // Nouveau système
-    public SquadPathFollower squadPathFollower; // Ancien système (backup)
+    public WaypointPathFollower waypointPathFollower;
+    //public SquadPathFollower squadPathFollower;
     
     [Header("Auto Cover")]
     public bool autoSeekCoverOnArrival = true;
@@ -28,13 +25,12 @@ public class SquadController : MonoBehaviour
     void Awake()
     {
         if (squad == null) squad = GetComponent<Squad>();
-        
-        // Auto-detect path follower
+
         if (waypointPathFollower == null)
             waypointPathFollower = GetComponent<WaypointPathFollower>();
         
-        if (squadPathFollower == null)
-            squadPathFollower = GetComponent<SquadPathFollower>();
+        /*if (squadPathFollower == null)
+            squadPathFollower = GetComponent<SquadPathFollower>();*/
     }
     
     void Start()
@@ -47,16 +43,15 @@ public class SquadController : MonoBehaviour
         if (autoSeekCoverOnArrival && !hasReachedDestination)
         {
             bool pathComplete = false;
-            
-            // Vérifier selon le système utilisé
+
             if (waypointPathFollower != null)
             {
                 pathComplete = !waypointPathFollower.IsFollowingPath();
             }
-            else if (squadPathFollower != null)
+           /* else if (squadPathFollower != null)
             {
                 pathComplete = !squadPathFollower.IsFollowingPath();
-            }
+            }*/
             
             if (pathComplete)
             {
@@ -110,104 +105,61 @@ public class SquadController : MonoBehaviour
             SoldierAgent[] childSoldiers = GetComponentsInChildren<SoldierAgent>();
             soldiers.AddRange(childSoldiers);
         }
-        
-        if (showDebugLogs)
-        {
-            Debug.Log($"[SquadController] {soldiers.Count} soldats trouvés");
-        }
     }
-    
-    /// <summary>
-    /// Démarre le mouvement de la squad
-    /// </summary>
+
     public void StartMovement()
     {
-        Debug.Log("[SquadController] === StartMovement appelé ===");
-        
         hasReachedDestination = false;
-        
-        // Debug des références
-        Debug.Log($"[SquadController] waypointPathFollower = {(waypointPathFollower != null ? "OK" : "NULL")}");
-        Debug.Log($"[SquadController] squadPathFollower = {(squadPathFollower != null ? "OK" : "NULL")}");
-        
-        // Démarrer selon le système disponible
+
         if (waypointPathFollower != null)
         {
-            Debug.Log("[SquadController] Appel de waypointPathFollower.StartFollowingPath()");
             waypointPathFollower.StartFollowingPath();
-            
-            if (showDebugLogs)
-            {
-                Debug.Log("[SquadController] Démarrage du WaypointPath");
-            }
         }
-        else if (squadPathFollower != null)
-        {
-            // Fallback ancien système
-            Debug.LogWarning("[SquadController] WaypointPathFollower non trouvé, utilise ancien système");
-        }
-        else
-        {
-            Debug.LogError("[SquadController] Aucun PathFollower trouvé !");
+        else {
             return;
         }
-        
-        // Mettre tous les soldats en SquadMovementState
+
         int transitionCount = 0;
-        foreach (var soldier in soldiers)
+        foreach (var soldier in GetAliveSoldiers())
         {
             if (soldier != null)
             {
-                soldier.JoinSquadMovement(); // Mouvement normal de squad
+                soldier.JoinSquadMovement();
                 transitionCount++;
             }
         }
-        
-        // Démarrer la coordination de cover si présente
+
         SquadCoverCoordinator coordinator = GetComponent<SquadCoverCoordinator>();
         if (coordinator != null)
         {
             coordinator.StartCoordination();
         }
-        
-        if (showDebugLogs)
-        {
-            Debug.Log($"[SquadController] {transitionCount} soldats en mouvement");
-        }
     }
-    
-    /// <summary>
-    /// Version legacy pour compatibilité
-    /// </summary>
+
     public void MoveSquadToDestination(Vector3 destination)
     {
-        // Si on utilise WaypointPath, ignorer la destination
         if (waypointPathFollower != null)
         {
             StartMovement();
         }
-        else if (squadPathFollower != null)
+       /* else if (squadPathFollower != null)
         {
             squadPathFollower.MoveSquadToDestination(destination);
             
-            foreach (var soldier in soldiers)
+            foreach (var soldier in GetAliveSoldiers())
             {
                 if (soldier != null)
                 {
                     soldier.JoinSquadMovement();
                 }
             }
-        }
+        }*/
     }
     
     public void OrderSquadToSeekNearbyCover()
     {
-        if (showDebugLogs)
-        {
-            Debug.Log($"[SquadController] Cherche covers (rayon {searchRadius}m)");
-        }
         
-        foreach (var soldier in soldiers)
+        foreach (var soldier in GetAliveSoldiers())
         {
             if (soldier != null)
             {
@@ -225,12 +177,12 @@ public class SquadController : MonoBehaviour
             waypointPathFollower.StopFollowing();
         }
         
-        if (squadPathFollower != null)
+        /*if (squadPathFollower != null)
         {
             squadPathFollower.StopFollowing();
-        }
+        }*/
         
-        foreach (var soldier in soldiers)
+        foreach (var soldier in GetAliveSoldiers())
         {
             if (soldier != null)
             {
@@ -241,7 +193,7 @@ public class SquadController : MonoBehaviour
     
     public void OrderSquadToLeaveCover()
     {
-        foreach (var soldier in soldiers)
+        foreach (var soldier in GetAliveSoldiers())
         {
             if (soldier != null)
             {
@@ -250,49 +202,82 @@ public class SquadController : MonoBehaviour
             }
         }
     }
-    
+
     public bool IsSquadInCover()
     {
+        int aliveCount = 0;
+        int inCoverCount = 0;
+        
         foreach (var soldier in soldiers)
         {
-            if (soldier != null && !soldier.IsInCover())
-                return false;
+            if (soldier == null || !soldier.gameObject.activeSelf)
+                continue;
+
+            ExposureTimer timer = soldier.GetComponent<ExposureTimer>();
+            if (timer != null && timer.IsDead())
+                continue;
+            
+            aliveCount++;
+            
+            if (soldier.IsInCover())
+                inCoverCount++;
         }
-        return true;
+
+        if (aliveCount == 0)
+            return false;
+        return inCoverCount >= aliveCount;
     }
-    
     public bool IsSquadMoving()
     {
         foreach (var soldier in soldiers)
         {
-            if (soldier != null && soldier.IsMoving())
+            if (soldier == null || !soldier.gameObject.activeSelf)
+                continue;
+
+            ExposureTimer timer = soldier.GetComponent<ExposureTimer>();
+            if (timer != null && timer.IsDead())
+                continue;
+            
+            if (soldier.IsMoving())
                 return true;
         }
         return false;
     }
-    
     public int GetAliveCount()
     {
         int count = 0;
         foreach (var soldier in soldiers)
         {
-            if (soldier != null && soldier.gameObject.activeSelf)
-                count++;
+            if (soldier == null || !soldier.gameObject.activeSelf)
+                continue;
+
+            ExposureTimer timer = soldier.GetComponent<ExposureTimer>();
+            if (timer != null && timer.IsDead())
+                continue;
+            
+            count++;
         }
         return count;
     }
-    
+
     public int GetInCoverCount()
     {
         int count = 0;
         foreach (var soldier in soldiers)
         {
-            if (soldier != null && soldier.IsInCover())
+            if (soldier == null || !soldier.gameObject.activeSelf)
+                continue;
+
+            ExposureTimer timer = soldier.GetComponent<ExposureTimer>();
+            if (timer != null && timer.IsDead())
+                continue;
+            
+            if (soldier.IsInCover())
                 count++;
         }
         return count;
     }
-    
+
     public Vector3 GetSquadCenter()
     {
         if (soldiers.Count == 0) return transform.position;
@@ -302,21 +287,41 @@ public class SquadController : MonoBehaviour
         
         foreach (var soldier in soldiers)
         {
-            if (soldier != null)
-            {
-                center += soldier.transform.position;
-                count++;
-            }
+            if (soldier == null || !soldier.gameObject.activeSelf)
+                continue;
+
+            ExposureTimer timer = soldier.GetComponent<ExposureTimer>();
+            if (timer != null && timer.IsDead())
+                continue;
+            
+            center += soldier.transform.position;
+            count++;
         }
         
         return count > 0 ? center / count : transform.position;
     }
-    
-    /// <summary>
-    /// Retourne la liste des soldats (pour SquadCoverCoordinator)
-    /// </summary>
+
     public List<SoldierAgent> GetSoldiers()
     {
         return soldiers;
+    }
+
+    public List<SoldierAgent> GetAliveSoldiers()
+    {
+        List<SoldierAgent> aliveSoldiers = new List<SoldierAgent>();
+        
+        foreach (var soldier in soldiers)
+        {
+            if (soldier == null || !soldier.gameObject.activeSelf)
+                continue;
+            
+            ExposureTimer timer = soldier.GetComponent<ExposureTimer>();
+            if (timer != null && timer.IsDead())
+                continue;
+            
+            aliveSoldiers.Add(soldier);
+        }
+        
+        return aliveSoldiers;
     }
 }

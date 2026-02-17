@@ -10,10 +10,7 @@ public class AStarPathfinder : MonoBehaviour
     {
         grid = GetComponent<PathFindingGrid>();
     }
-    
-    /// <summary>
-    /// Trouve un chemin entre startPos et targetPos
-    /// </summary>
+
     public List<Vector3> FindPath(Vector3 startPos, Vector3 targetPos)
     {
         PathNode startNode = grid.NodeFromWorldPoint(startPos);
@@ -26,7 +23,6 @@ public class AStarPathfinder : MonoBehaviour
         
         while (openSet.Count > 0)
         {
-            // Trouver le node avec le fCost le plus bas
             PathNode currentNode = openSet[0];
             for (int i = 1; i < openSet.Count; i++)
             {
@@ -39,14 +35,10 @@ public class AStarPathfinder : MonoBehaviour
             
             openSet.Remove(currentNode);
             closedSet.Add(currentNode);
-            
-            // On a trouvé le chemin !
             if (currentNode == targetNode)
             {
                 return RetracePath(startNode, targetNode);
             }
-            
-            // Explorer les voisins
             foreach (PathNode neighbor in grid.GetNeighbors(currentNode, includeDiagonals: false))
             {
                 if (!neighbor.isWalkable || closedSet.Contains(neighbor))
@@ -69,15 +61,8 @@ public class AStarPathfinder : MonoBehaviour
                 }
             }
         }
-        
-        // Pas de chemin trouvé
-        Debug.LogWarning("A* : Aucun chemin trouvé !");
         return new List<Vector3>();
     }
-    
-    /// <summary>
-    /// Reconstitue le chemin en remontant les parents
-    /// </summary>
     List<Vector3> RetracePath(PathNode startNode, PathNode endNode)
     {
         List<PathNode> path = new List<PathNode>();
@@ -90,17 +75,12 @@ public class AStarPathfinder : MonoBehaviour
         }
         
         path.Reverse();
-        
-        // Simplifier le chemin (optionnel)
+
         List<Vector3> waypoints = SimplifyPath(path);
-        
-        Debug.Log($"A* : Chemin trouvé avec {waypoints.Count} waypoints");
+
         return waypoints;
     }
-    
-    /// <summary>
-    /// Simplifie le chemin en ne gardant que les points de changement de direction
-    /// </summary>
+
     List<Vector3> SimplifyPath(List<PathNode> path)
     {
         List<Vector3> waypoints = new List<Vector3>();
@@ -120,8 +100,6 @@ public class AStarPathfinder : MonoBehaviour
             
             directionOld = directionNew;
         }
-        
-        // Ajouter le dernier point
         if (path.Count > 0)
         {
             waypoints.Add(path[path.Count - 1].worldPosition);
@@ -129,19 +107,12 @@ public class AStarPathfinder : MonoBehaviour
         
         return waypoints;
     }
-    
-    /// <summary>
-    /// Distance entre deux nodes (heuristique de Manhattan ou Euclidienne)
-    /// </summary>
+
     int GetDistance(PathNode nodeA, PathNode nodeB)
     {
         int dstX = Mathf.Abs(nodeA.gridX - nodeB.gridX);
         int dstY = Mathf.Abs(nodeA.gridY - nodeB.gridY);
-        
-        // Manhattan distance (plus rapide, pas de diagonales)
+
         return dstX + dstY;
-        
-        // OU Euclidienne (si diagonales autorisées) :
-        // return Mathf.RoundToInt(Mathf.Sqrt(dstX * dstX + dstY * dstY) * 10);
     }
 }

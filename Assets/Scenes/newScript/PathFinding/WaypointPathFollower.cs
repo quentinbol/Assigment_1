@@ -1,10 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-/// <summary>
-/// Version SIMPLIFIÉE - Va directement de waypoint en waypoint
-/// Pas d'A* entre les waypoints, juste arrive directement
-/// </summary>
 public class WaypointPathFollower : MonoBehaviour
 {
     [Header("References")]
@@ -35,7 +31,6 @@ public class WaypointPathFollower : MonoBehaviour
     {
         if (waypointPath == null || !waypointPath.IsValid())
         {
-            Debug.LogError("[WaypointPathFollower] Cant waypoint");
             return;
         }
         
@@ -65,7 +60,7 @@ public class WaypointPathFollower : MonoBehaviour
         
         /*if (showDebug && Time.frameCount % 60 == 0)
         {
-            Debug.Log($"[WaypointPathFollower] WP{currentWaypointIndex} distance: {distance:F1}m");
+            Debug.Log($"dustance to wapvoint : {distance} / {waypointReachedDistance}");
         }*/
         
         if (distance < waypointReachedDistance)
@@ -91,11 +86,6 @@ public class WaypointPathFollower : MonoBehaviour
     void OnPathCompleted()
     {
         isFollowingPath = false;
-        
-        if (showDebug)
-        {
-            Debug.Log("[WaypointPathFollower] Chemin terminé !");
-        }
     }
 
     public void StopFollowing()

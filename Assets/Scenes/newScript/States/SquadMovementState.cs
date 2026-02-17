@@ -1,10 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-/// <summary>
-/// État "mouvement en squad" - compatible avec WaypointPathFollower
-/// Le soldat suit le chemin de waypoints avec flocking
-/// </summary>
 public class SquadMovementState : SoldierState
 {
     [Header("Behavior Weights")]
@@ -17,27 +13,24 @@ public class SquadMovementState : SoldierState
     private float flockingActivationDistance = 10f;
     
     private WaypointPathFollower waypointPathFollower;
-    private SquadPathFollower squadPathFollower; // Backup si pas de waypoints
+    //private SquadPathFollower squadPathFollower; // Backup si pas de waypoints
     
     public SquadMovementState(SoldierAgent soldier) : base(soldier) { }
     
     public override void OnEnter()
     {
         base.OnEnter();
-        
-        // Essayer de récupérer WaypointPathFollower en priorité
+
         if (soldier.ParentSquad != null)
         {
             waypointPathFollower = soldier.ParentSquad.GetComponent<WaypointPathFollower>();
-            
-            // Backup : ancien système
-            if (waypointPathFollower == null)
+
+            /*if (waypointPathFollower == null)
             {
                 squadPathFollower = soldier.ParentSquad.GetComponent<SquadPathFollower>();
-            }
+            }*/
         }
-        
-        // Synchroniser les poids
+
         if (soldier.ParentSquad != null)
         {
             arriveWeight = soldier.ParentSquad.arriveWeight;
@@ -59,29 +52,25 @@ public class SquadMovementState : SoldierState
         {
             targetPosition = waypointPathFollower.GetCurrentTargetPosition();
         }
-        else if (squadPathFollower != null && squadPathFollower.IsFollowingPath())
+        /*else if (squadPathFollower != null && squadPathFollower.IsFollowingPath())
         {
             targetPosition = squadPathFollower.GetCurrentWaypoint();
-        }
+        }*/
         else
         {
-            // Aucun path actif
             return;
         }
-        
-        // 1. SEEK vers la position cible (pas de ralentissement pour les waypoints)
+
         Vector3 seekForce = steering.Seek(targetPosition);
         movement.ApplyForce(seekForce * arriveWeight);
-        
-        // 2. SEPARATION (toujours active)
+
         List<Transform> allNeighbors = steering.FindNeighbors(steering.separationRadius, sameSquadOnly: false);
         if (allNeighbors.Count > 0)
         {
             Vector3 separationForce = steering.Separation(allNeighbors);
             movement.ApplyForce(separationForce * separationWeight);
         }
-        
-        // 3. FLOCKING (si loin de la cible)
+
         float distanceToTarget = Vector3.Distance(transform.position, targetPosition);
         
         if (distanceToTarget > flockingActivationDistance)
